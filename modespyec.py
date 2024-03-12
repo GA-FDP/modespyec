@@ -17,6 +17,7 @@ def wsfft_paired_signal(
     blockstride: int,
     nfft: int,
     wintype: str,
+    nfsmooth : int,
 ) -> dict:
     assert len(t.shape) == 1
     assert len(x1.shape) == 1
@@ -34,10 +35,15 @@ def wsfft_paired_signal(
     freq = (np.arange(nffth) / nffth) * (Fs / 2.0)
     w = get_window_weights(wintype, blocksize)
     pw = np.sum(w * w) / blocksize
+
+    # Factor ff is used like this: RMS(.) = sqrt( ff * sum_over_freq (windowed_fft_vector) )
+    ff = 2 / (pw * blocksize * nfft)
+
     T = np.zeros((NB,))
     X11 = np.zeros((nffth, NB))
     X22 = np.zeros((nffth, NB))
     X12 = np.zeros((nffth, NB), dtype=complex)  # cross-spectrum
+    #C12 = np.zeros((nffth, NB), dtype=complex)  # cross-coherence
     for b in range(NB):
         i1 = block_start[b]
         i2 = i1 + blocksize
@@ -54,19 +60,17 @@ def wsfft_paired_signal(
         X11[:, b] = np.real(X1b * np.conj(X1b))
         X22[:, b] = np.real(X2b * np.conj(X2b))
         X12[:, b] = X1b * np.conj(X2b)
+        #C12[:, b] = X12[:, b] / np.sqrt(X11[:, b] * X22[:, b])
+
+        # TODO: finish off the smoothing calcs
+        SX1 = smooth(X11[:, b], nfsmooth)
+        SX2 = smooth(X22[:, b], nfsmooth)
 
     return {"tmid": T, "freq": freq, "X11": X11, "X22": X22, "X12": X12}
 
 
 def modespec(WSFFT: dict):
     raise NotImplementedError
-
-
-"""
-% Factor ff is used like this: RMS(.) = sqrt( ff * sum_over_freq (windowed_fft_vector) )
-pw = sum(W.^2) / block_size;
-ff = 2 / (pw * block_size * nfft);
-"""
 
 
 def get_window_weights(name: str, blocksize: int) -> np.array:
@@ -90,3 +94,13 @@ def get_window_weights(name: str, blocksize: int) -> np.array:
         return np.ones((blocksize,))
     else:
         raise NotImplementedError
+
+def smooth(x : np.array, npts : int) -> np.array:
+    """
+    Basic boxcar 1D signal smoothing
+    """
+    assert len(x.shape) == 1
+    nh = (npts - 1) // 2
+    assert nh >= 1
+    y = np.convolve(x, np.ones((npts, )) / npts, mode="full")
+    return y[nh:-nh]

@@ -30,6 +30,7 @@ if __name__ == "__main__":
     parser.add_argument("--blocksize", type=int, default=800)  # 4ms window
     parser.add_argument("--blockstride", type=int, default=400)  # 2ms stride
     parser.add_argument("--window", type=str, default="Hamming")
+    parser.add_argument("--nfsmooth", type=str, default=5)
     parser.add_argument("--tmin", type=float, default=0.0)
     parser.add_argument("--tmax", type=float, default=8.0)
     args = parser.parse_args()
@@ -59,7 +60,10 @@ if __name__ == "__main__":
         args.blockstride,
         args.nfft,
         args.window,
+        args.nfsmooth,
     )
+
+    # Plotting examples
 
     bbox = [
         spec["tmid"][0],
@@ -75,7 +79,19 @@ if __name__ == "__main__":
     )
     plt.xlabel("time [sec]")
     plt.ylabel("freq [kHz]")
-    plt.title("Average PSD for (%s, %s)" % (probe_name_1, probe_name_2))
+    plt.title("Average PSD (%s, %s)" % (probe_name_1, probe_name_2))
+    plt.show()
+
+    plt.imshow(
+        -1.0 * (180.0 / np.pi) * np.angle(spec["X12"]) / delta_theta,
+        origin="lower",
+        extent=bbox,
+        aspect="auto",
+    )
+    plt.colorbar()
+    plt.xlabel("time [sec]")
+    plt.ylabel("freq [kHz]")
+    plt.title("cross-phase (%s, %s)" % (probe_name_1, probe_name_2))
     plt.show()
 
     print("done.")
