@@ -27,9 +27,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--shot", type=int, default=150792)
     parser.add_argument("--nfft", type=int, default=1024)
-    parser.add_argument("--blocksize", type=int, default=500)
-    parser.add_argument("--blockstride", type=int, default=250)
+    parser.add_argument("--blocksize", type=int, default=800)  # 4ms window
+    parser.add_argument("--blockstride", type=int, default=400)  # 2ms stride
     parser.add_argument("--window", type=str, default="Hamming")
+    parser.add_argument("--tmin", type=float, default=0.0)
+    parser.add_argument("--tmax", type=float, default=8.0)
     args = parser.parse_args()
 
     probe_name_1, probe_name_2, delta_theta = get_default_probe(args.shot)
@@ -47,14 +49,33 @@ if __name__ == "__main__":
     )
     print("Fs = %.1f kHz" % (1.0e-3 / Ts))
 
+    range_filter = np.logical_and(time_sec >= args.tmin, time_sec <= args.tmax)
+
     spec = modespyec.wsfft_paired_signal(
-        time_sec,
-        probe1["data"],
-        probe2["data"],
+        time_sec[range_filter],
+        probe1["data"][range_filter],
+        probe2["data"][range_filter],
         args.blocksize,
         args.blockstride,
         args.nfft,
         args.window,
     )
+
+    bbox = [
+        spec["tmid"][0],
+        spec["tmid"][-1],
+        spec["freq"][0] / 1e3,
+        spec["freq"][-1] / 1e3,
+    ]
+    plt.imshow(
+        np.log10((spec["X11"] + spec["X22"]) / 2.0),
+        origin="lower",
+        extent=bbox,
+        aspect="auto",
+    )
+    plt.xlabel("time [sec]")
+    plt.ylabel("freq [kHz]")
+    plt.title("Average PSD for (%s, %s)" % (probe_name_1, probe_name_2))
+    plt.show()
 
     print("done.")
