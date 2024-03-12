@@ -1,3 +1,3 @@
 # modespyec
 
-Numpy modespec-like functionality
+Vanilla `numpy` `modespec`-like spectrogram capabilities.
