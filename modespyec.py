@@ -129,6 +129,27 @@ def get_amplitude(
     return A
 
 
+def get_color(n: int) -> str:
+    """
+    Get color identifier string (working for matplotlib) corresponding
+    to modespec's coloring scheme for n-numbers; return grey if n is out-of-range.
+    """
+    modespec_coloring = {
+        0: "black",
+        1: "red",
+        2: "yellow",
+        3: "green",
+        4: "blue",
+        5: "orange",
+        -1: "lightblue",
+        -2: "khaki",
+        -3: "violet",
+        -4: "cyan",
+        -5: "lightgreen",
+    }
+    return modespec_coloring.get(n, "grey")
+
+
 def get_window_weights(name: str, blocksize: int) -> np.array:
     nvec = np.arange(blocksize)
     lname = name.lower()

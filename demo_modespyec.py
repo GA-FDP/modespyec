@@ -29,7 +29,7 @@ if __name__ == "__main__":
     parser.add_argument("--blocksize", type=int, default=800)  # 4ms window
     parser.add_argument("--blockstride", type=int, default=400)  # 2ms stride
     parser.add_argument("--window", type=str, default="Hamming")
-    parser.add_argument("--nfsmooth", type=int, default=5)
+    parser.add_argument("--nfsmooth", type=int, default=7)
     parser.add_argument("--tmin", type=float, default=0.0)
     parser.add_argument("--tmax", type=float, default=8.0)
 
@@ -107,6 +107,7 @@ if __name__ == "__main__":
 
     masked = np.copy(spec["SC12"])
     masked[spec["SC12"] < args.coh_min] = 0.0
+    masked[spec["SC12"] >= args.coh_min] = 1.0
     time_freq_image(
         masked, "coherence (%s, %s) > %f" % (probe_name_1, probe_name_2, args.coh_min)
     )
@@ -114,20 +115,22 @@ if __name__ == "__main__":
     plt.show()
 
     # Extract and plot n-number amplitude traces
+    # Use modespec-like coloring scheme
 
     amps = modespyec.get_amplitude(
         spec,
-        [2, -2, 1, -1, 0, -3, 3],
+        [5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5],
         delta_theta,
         coh_min=args.coh_min,
         eps_int=args.eps_int,
     )
 
     for n in amps.keys():
-        plt.plot(spec["tmid"], amps[n], label="n=%i" % (n))
+        plt.plot(spec["tmid"], amps[n], label="n=%i" % (n), c=modespyec.get_color(n))
 
     plt.legend()
     plt.grid(True)
+    plt.gca().set_facecolor("dimgrey")
     plt.xlabel("time [sec]")
     plt.ylabel("RMS amplitude [T/s]")
     plt.title("shot #%i" % (args.shot))
