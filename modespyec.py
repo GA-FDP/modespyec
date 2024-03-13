@@ -46,7 +46,7 @@ def wsfft_paired_signal(
     SX11 = np.copy(X11)
     SX22 = np.copy(X22)
     SX12 = np.copy(X12)
-    SC12 = np.copy(X11) # real-valued
+    SC12 = np.copy(X11)  # real-valued
     for b in range(NB):
         i1 = block_start[b]
         i2 = i1 + blocksize
@@ -70,6 +70,10 @@ def wsfft_paired_signal(
 
         SC12[:, b] = np.real(SX12[:, b] * np.conj(SX12[:, b])) / SX11[:, b] / SX22[:, b]
 
+    # modespec's relationship btw. "nsmooth" and "fsmooth"
+    df = 1.0 / (blocksize * Ts)
+    fsmooth = 2 * df * ((nfsmooth - 1) / 2)
+
     return {
         "tmid": T,
         "freq": freq,
@@ -80,11 +84,49 @@ def wsfft_paired_signal(
         "SX22": SX22,
         "SX12": SX12,
         "SC12": SC12,
+        "deltat": blocksize * Ts,
+        "deltaf": df,
+        "fsmooth": fsmooth,
+        "ff": ff,
     }
 
 
-def modespec(WSFFT: dict):
-    raise NotImplementedError
+def get_amplitude(
+    M: dict,
+    nsigned: list,
+    delta_theta: float,
+    coh_min: float = 0.98,
+    eps_int: float = 0.10,
+) -> dict:
+    """
+    M is the dict returned by the above function.
+    nsigned is a list of n-numbers for which to estimate RMS amplitudes
+    delta_theta is the angular distance between the probes that was used to calc. M
+    coh_min: minimum coherence
+    eps_int: tolerance for integerness
+    """
+
+    def get_single_amplitude(ntarget):
+        NB = M["tmid"].shape[0]
+        NF = M["X11"].shape[0]
+        c = 180.0 / np.pi
+        rms = np.zeros((NB,))
+        for b in range(NB):
+            w = np.zeros((NF,))
+            w[M["SC12"][:, b] >= coh_min] = 1.0
+            w[
+                np.abs(-c * np.angle(M["SX12"][:, b]) / delta_theta - ntarget) > eps_int
+            ] = 0.0
+            rms[b] = np.sqrt(
+                M["ff"] * np.sum((M["X11"][:, b] * w + M["X22"][:, b] * w)) / 2
+            )
+        return rms
+
+    A = dict()
+    for n in nsigned:
+        A[n] = get_single_amplitude(n)
+
+    return A
 
 
 def get_window_weights(name: str, blocksize: int) -> np.array:

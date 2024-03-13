@@ -32,6 +32,10 @@ if __name__ == "__main__":
     parser.add_argument("--nfsmooth", type=int, default=5)
     parser.add_argument("--tmin", type=float, default=0.0)
     parser.add_argument("--tmax", type=float, default=8.0)
+
+    parser.add_argument("--eps-int", type=float, default=0.20)
+    parser.add_argument("--coh-min", type=float, default=0.95)
+
     args = parser.parse_args()
 
     probe_name_1, probe_name_2, delta_theta = get_default_probe(args.shot)
@@ -62,7 +66,7 @@ if __name__ == "__main__":
         args.nfsmooth,
     )
 
-    # Plotting examples
+    # Plotting example helpers
 
     bbox = [
         spec["tmid"][0],
@@ -70,39 +74,63 @@ if __name__ == "__main__":
         spec["freq"][0] / 1e3,
         spec["freq"][-1] / 1e3,
     ]
-    plt.imshow(
+
+    def time_freq_image(thing: np.array, title: str):
+        plt.imshow(
+            thing,
+            origin="lower",
+            extent=bbox,
+            aspect="auto",
+        )
+        plt.xlabel("time [sec]")
+        plt.ylabel("freq [kHz]")
+        plt.title(title)
+
+    # Time-frequency plots showing internal variables
+
+    time_freq_image(
         np.log10((spec["X11"] + spec["X22"]) / 2.0),
-        origin="lower",
-        extent=bbox,
-        aspect="auto",
+        "Average PSD (%s, %s)" % (probe_name_1, probe_name_2),
     )
-    plt.xlabel("time [sec]")
-    plt.ylabel("freq [kHz]")
-    plt.title("Average PSD (%s, %s)" % (probe_name_1, probe_name_2))
     plt.show()
 
-    plt.imshow(
-        -1.0 * (180.0 / np.pi) * np.angle(spec["SX12"]) / delta_theta,
-        origin="lower",
-        extent=bbox,
-        aspect="auto",
+    time_freq_image(
+        np.round(-1.0 * (180.0 / np.pi) * np.angle(spec["SX12"]) / delta_theta),
+        "cross-phase/delta (%s, %s)" % (probe_name_1, probe_name_2),
     )
     plt.colorbar()
-    plt.xlabel("time [sec]")
-    plt.ylabel("freq [kHz]")
-    plt.title("cross-phase (%s, %s)" % (probe_name_1, probe_name_2))
     plt.show()
 
-    plt.imshow(
-        spec["SC12"],
-        origin="lower",
-        extent=bbox,
-        aspect="auto",
+    time_freq_image(spec["SC12"], "coherence (%s, %s)" % (probe_name_1, probe_name_2))
+    plt.colorbar()
+    plt.show()
+
+    masked = np.copy(spec["SC12"])
+    masked[spec["SC12"] < args.coh_min] = 0.0
+    time_freq_image(
+        masked, "coherence (%s, %s) > %f" % (probe_name_1, probe_name_2, args.coh_min)
     )
     plt.colorbar()
+    plt.show()
+
+    # Extract and plot n-number amplitude traces
+
+    amps = modespyec.get_amplitude(
+        spec,
+        [2, -2, 1, -1, 0, -3, 3],
+        delta_theta,
+        coh_min=args.coh_min,
+        eps_int=args.eps_int,
+    )
+
+    for n in amps.keys():
+        plt.plot(spec["tmid"], amps[n], label="n=%i" % (n))
+
+    plt.legend()
+    plt.grid(True)
     plt.xlabel("time [sec]")
-    plt.ylabel("freq [kHz]")
-    plt.title("coherence (%s, %s)" % (probe_name_1, probe_name_2))
+    plt.ylabel("RMS amplitude [T/s]")
+    plt.title("shot #%i" % (args.shot))
     plt.show()
 
     print("done.")
