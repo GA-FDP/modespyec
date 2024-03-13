@@ -88,6 +88,9 @@ if __name__ == "__main__":
         plt.ylabel("freq [kHz]")
         plt.title(title)
 
+    def get_coh_min():
+        return spec["c95"] if args.coh_min < 0.0 else args.coh_min
+
     # Time-frequency plots showing internal variables
 
     time_freq_image(
@@ -108,10 +111,10 @@ if __name__ == "__main__":
     plt.show()
 
     masked = np.copy(spec["SC12"])
-    masked[spec["SC12"] < args.coh_min] = 0.0
-    masked[spec["SC12"] >= args.coh_min] = 1.0
+    masked[spec["SC12"] < get_coh_min()] = 0.0
+    # masked[spec["SC12"] >= get_coh_min()] = 1.0
     time_freq_image(
-        masked, "coherence (%s, %s) > %f" % (probe_name_1, probe_name_2, args.coh_min)
+        masked, "coherence (%s, %s) > %f" % (probe_name_1, probe_name_2, get_coh_min())
     )
     plt.colorbar()
     plt.show()
@@ -126,7 +129,7 @@ if __name__ == "__main__":
     )
     mpl.colormaps.register(modespyec_cmap)
     time_freq_image(
-        modespyec.get_mode_map(spec, delta_theta, args.coh_min, no_value=0.0),
+        modespyec.get_mode_map(spec, delta_theta, get_coh_min(), no_value=0.0),
         "modespyec.get_mode_map",
     )
     plt.gca().set_facecolor("black")
@@ -142,7 +145,7 @@ if __name__ == "__main__":
         spec,
         [5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5],
         delta_theta,
-        coh_min=args.coh_min,
+        coh_min=get_coh_min(),
         eps_int=args.eps_int,
     )
 

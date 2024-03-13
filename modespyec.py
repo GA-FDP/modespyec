@@ -39,6 +39,9 @@ def wsfft_paired_signal(
     # Factor ff is used like this: RMS(.) = sqrt( ff * sum_over_freq (windowed_fft_vector) )
     ff = 2 / (pw * blocksize * nfft)
 
+    assert nfsmooth > 2, "nfsmooth must be > 2"
+    assert (nfsmooth - 1) % 2 == 0, "please use odd number for nfsmooth"
+
     T = np.zeros((NB,))
     X11 = np.zeros((nffth, NB))
     X22 = np.zeros((nffth, NB))
@@ -74,6 +77,11 @@ def wsfft_paired_signal(
     df = 1.0 / (blocksize * Ts)
     fsmooth = 2 * df * ((nfsmooth - 1) / 2)
 
+    # modespec's calc (verbatim) of the "c95" value (used as coherence threshold)
+    c95 = 1.96 / np.sqrt(2.0 * nfsmooth - 2.0)
+    c95 = (np.exp(c95) - np.exp(-c95)) / (np.exp(c95) + np.exp(-c95))
+    c95 = c95 * c95
+
     return {
         "tmid": T,
         "freq": freq,
@@ -88,6 +96,7 @@ def wsfft_paired_signal(
         "deltaf": df,
         "fsmooth": fsmooth,
         "ff": ff,
+        "c95": c95,
     }
 
 
