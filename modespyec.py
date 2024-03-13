@@ -91,6 +91,14 @@ def wsfft_paired_signal(
     }
 
 
+def get_mode_map(
+    M: dict, delta_theta: float, coh_min: float, no_value: float = np.nan
+) -> np.array:
+    nmap = -1 * (180 / np.pi) * np.angle(M["SX12"]) / delta_theta
+    nmap[M["SC12"] < coh_min] = no_value
+    return nmap
+
+
 def get_amplitude(
     M: dict,
     nsigned: list,
@@ -131,8 +139,9 @@ def get_amplitude(
 
 def get_color(n: int) -> str:
     """
-    Get color identifier string (working for matplotlib) corresponding
+    Get CSS color identifier string (working for matplotlib) corresponding
     to modespec's coloring scheme for n-numbers; return grey if n is out-of-range.
+    SEE: https://matplotlib.org/stable/gallery/color/named_colors.html
     """
     modespec_coloring = {
         0: "black",
@@ -141,7 +150,7 @@ def get_color(n: int) -> str:
         3: "green",
         4: "blue",
         5: "orange",
-        -1: "lightblue",
+        -1: "deepskyblue",
         -2: "khaki",
         -3: "violet",
         -4: "cyan",

@@ -3,7 +3,9 @@ Script that generates and plots a modespec-like plot for a given DIII-D shot num
 """
 
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
+import matplotlib.colors
 import modespyec
 import argparse
 
@@ -34,7 +36,7 @@ if __name__ == "__main__":
     parser.add_argument("--tmax", type=float, default=8.0)
 
     parser.add_argument("--eps-int", type=float, default=0.20)
-    parser.add_argument("--coh-min", type=float, default=0.95)
+    parser.add_argument("--coh-min", type=float, default=0.925)
 
     args = parser.parse_args()
 
@@ -114,6 +116,25 @@ if __name__ == "__main__":
     plt.colorbar()
     plt.show()
 
+    # Create a modespec-like colored spectrogram plot - thresholded by args.coh_min
+
+    modespyec_clist = [
+        matplotlib.colors.to_rgb(modespyec.get_color(n)) for n in np.arange(-5, 6, 1)
+    ]
+    modespyec_cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
+        "modespyec", modespyec_clist, N=100
+    )
+    mpl.colormaps.register(modespyec_cmap)
+    time_freq_image(
+        modespyec.get_mode_map(spec, delta_theta, args.coh_min, no_value=0.0),
+        "modespyec.get_mode_map",
+    )
+    plt.gca().set_facecolor("black")
+    plt.set_cmap("modespyec")
+    plt.clim((-5, 5))
+    plt.colorbar(ticks=np.arange(-5, 6, 1))
+    plt.show()
+
     # Extract and plot n-number amplitude traces
     # Use modespec-like coloring scheme
 
@@ -130,7 +151,7 @@ if __name__ == "__main__":
 
     plt.legend()
     plt.grid(True)
-    plt.gca().set_facecolor("dimgrey")
+    plt.gca().set_facecolor("black")
     plt.xlabel("time [sec]")
     plt.ylabel("RMS amplitude [T/s]")
     plt.title("shot #%i" % (args.shot))
