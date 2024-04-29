@@ -36,7 +36,10 @@ if __name__ == "__main__":
     parser.add_argument("--tmax", type=float, default=8.0)
 
     parser.add_argument("--eps-int", type=float, default=0.20)
-    parser.add_argument("--coh-min", type=float, default=0.925)
+    parser.add_argument(
+        "--coh-min", type=float, default=0.90, help="(set < 0 to force a default)"
+    )
+    parser.add_argument("--pow-frac", type=float, default=0.10)
 
     args = parser.parse_args()
 
@@ -77,12 +80,9 @@ if __name__ == "__main__":
         spec["freq"][-1] / 1e3,
     ]
 
-    def time_freq_image(thing: np.array, title: str):
+    def time_freq_image(thing: np.array, title: str, interp_type=None):
         plt.imshow(
-            thing,
-            origin="lower",
-            extent=bbox,
-            aspect="auto",
+            thing, origin="lower", extent=bbox, aspect="auto", interpolation=interp_type
         )
         plt.xlabel("time [sec]")
         plt.ylabel("freq [kHz]")
@@ -129,8 +129,11 @@ if __name__ == "__main__":
     )
     mpl.colormaps.register(modespyec_cmap)
     time_freq_image(
-        modespyec.get_mode_map(spec, delta_theta, get_coh_min(), no_value=0.0),
+        modespyec.get_mode_map(
+            spec, delta_theta, get_coh_min(), no_value=0.0, pfrac=args.pow_frac
+        ),
         "modespyec.get_mode_map",
+        interp_type="nearest",
     )
     plt.gca().set_facecolor("black")
     plt.set_cmap("modespyec")

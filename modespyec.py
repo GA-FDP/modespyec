@@ -101,10 +101,21 @@ def wsfft_paired_signal(
 
 
 def get_mode_map(
-    M: dict, delta_theta: float, coh_min: float, no_value: float = np.nan
+    M: dict,
+    delta_theta: float,
+    coh_min: float,
+    no_value: float = np.nan,
+    pfrac: float = None,
+    qhigh: float = 0.99,
 ) -> np.array:
     nmap = -1 * (180 / np.pi) * np.angle(M["SX12"]) / delta_theta
     nmap[M["SC12"] < coh_min] = no_value
+    if not pfrac is None:
+        assert pfrac > 0.0 and pfrac <= 1.0
+        P = (M["X11"] + M["X22"]) / 2
+        phigh = np.quantile(P, q=qhigh)
+        pmin = pfrac * phigh
+        nmap[P < pmin] = no_value
     return nmap
 
 
