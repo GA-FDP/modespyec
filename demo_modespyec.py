@@ -40,6 +40,8 @@ if __name__ == "__main__":
         "--coh-min", type=float, default=0.90, help="(set < 0 to force a default)"
     )
     parser.add_argument("--pow-frac", type=float, default=0.10)
+    parser.add_argument("--pow-tmin", type=float, default=None)
+    parser.add_argument("--pow-tmax", type=float, default=None)
 
     parser.add_argument("--only-modespec-plot", action="store_true")
     parser.add_argument("--color-steps", type=int, default=100)
@@ -138,7 +140,13 @@ if __name__ == "__main__":
     mpl.colormaps.register(modespyec_cmap)
     time_freq_image(
         modespyec.get_mode_map(
-            spec, delta_theta, get_coh_min(), no_value=0.0, pfrac=args.pow_frac
+            spec,
+            delta_theta,
+            get_coh_min(),
+            no_value=0.0,
+            pfrac=args.pow_frac,
+            tmin=args.pow_tmin,
+            tmax=args.pow_tmax,
         ),
         "modespyec.get_mode_map",
         interp_type="nearest",
@@ -147,6 +155,10 @@ if __name__ == "__main__":
     plt.set_cmap("modespyec")
     plt.clim((-5, 5))
     plt.colorbar(ticks=np.arange(-5, 6, 1))
+    if not args.pow_tmin is None:
+        plt.axvline(x=args.pow_tmin, color="white", linestyle="-.")
+    if not args.pow_tmax is None:
+        plt.axvline(x=args.pow_tmax, color="white", linestyle="--")
     plt.show()
 
     # Extract and plot n-number amplitude traces
