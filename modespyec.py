@@ -124,7 +124,7 @@ def get_amplitude(
     nsigned: list,
     delta_theta: float,
     coh_min: float = 0.98,
-    eps_int: float = 0.10,
+    eps_int: float = 0.20,
 ) -> dict:
     """
     M is the dict returned by the above function.
@@ -134,25 +134,18 @@ def get_amplitude(
     eps_int: tolerance for integerness
     """
 
-    def get_single_amplitude(ntarget):
+    def get_single_amplitude_(ntarget):
         NB = M["tmid"].shape[0]
         NF = M["X11"].shape[0]
         c = 180.0 / np.pi
-        rms = np.zeros((NB,))
-        for b in range(NB):
-            w = np.zeros((NF,))
-            w[M["SC12"][:, b] >= coh_min] = 1.0
-            w[
-                np.abs(-c * np.angle(M["SX12"][:, b]) / delta_theta - ntarget) > eps_int
-            ] = 0.0
-            rms[b] = np.sqrt(
-                M["ff"] * np.sum((M["X11"][:, b] * w + M["X22"][:, b] * w)) / 2
-            )
-        return rms
+        W = np.zeros((NF, NB))
+        W[M["SC12"] >= coh_min] = 1.0
+        W[np.abs(-c * np.angle(M["SX12"]) / delta_theta - ntarget) > eps_int] = 0.0
+        return np.sqrt(M["ff"] * np.sum(0.5 * W * (M["X11"] + M["X22"]), axis=0))
 
     A = dict()
     for n in nsigned:
-        A[n] = get_single_amplitude(n)
+        A[n] = get_single_amplitude_(n)
 
     return A
 
