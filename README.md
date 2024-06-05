@@ -18,3 +18,8 @@ The following example includes both TM modes and broadband turbulent activity
 ```
 python demo_modespyec.py --shot 163518 --coh-min 0.40  --nfsmooth 11 --eps-int 0.50
 ```
+
+Another example:
+```
+python demo_modespyec.py --shot 169856 --tmax 5.0 --coh-min -1 --pow-frac 0.33 --nfsmooth 5 --window boxcar --eps-int 0.50 --only-modespec-plot
+```
