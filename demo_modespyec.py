@@ -41,6 +41,9 @@ if __name__ == "__main__":
     )
     parser.add_argument("--pow-frac", type=float, default=0.10)
 
+    parser.add_argument("--only-modespec-plot", action="store_true")
+    parser.add_argument("--color-steps", type=int, default=100)
+
     args = parser.parse_args()
 
     probe_name_1, probe_name_2, delta_theta = get_default_probe(args.shot)
@@ -91,33 +94,38 @@ if __name__ == "__main__":
     def get_coh_min():
         return spec["c95"] if args.coh_min < 0.0 else args.coh_min
 
-    # Time-frequency plots showing internal variables
+    if not args.only_modespec_plot:
 
-    time_freq_image(
-        np.log10((spec["X11"] + spec["X22"]) / 2.0),
-        "Average PSD (%s, %s)" % (probe_name_1, probe_name_2),
-    )
-    plt.show()
+        # Time-frequency plots showing internal variables
 
-    time_freq_image(
-        np.round(-1.0 * (180.0 / np.pi) * np.angle(spec["SX12"]) / delta_theta),
-        "cross-phase/delta (%s, %s)" % (probe_name_1, probe_name_2),
-    )
-    plt.colorbar()
-    plt.show()
+        time_freq_image(
+            np.log10((spec["X11"] + spec["X22"]) / 2.0),
+            "Average PSD (%s, %s)" % (probe_name_1, probe_name_2),
+        )
+        plt.show()
 
-    time_freq_image(spec["SC12"], "coherence (%s, %s)" % (probe_name_1, probe_name_2))
-    plt.colorbar()
-    plt.show()
+        time_freq_image(
+            np.round(-1.0 * (180.0 / np.pi) * np.angle(spec["SX12"]) / delta_theta),
+            "cross-phase/delta (%s, %s)" % (probe_name_1, probe_name_2),
+        )
+        plt.colorbar()
+        plt.show()
 
-    masked = np.copy(spec["SC12"])
-    masked[spec["SC12"] < get_coh_min()] = 0.0
-    # masked[spec["SC12"] >= get_coh_min()] = 1.0
-    time_freq_image(
-        masked, "coherence (%s, %s) > %f" % (probe_name_1, probe_name_2, get_coh_min())
-    )
-    plt.colorbar()
-    plt.show()
+        time_freq_image(
+            spec["SC12"], "coherence (%s, %s)" % (probe_name_1, probe_name_2)
+        )
+        plt.colorbar()
+        plt.show()
+
+        masked = np.copy(spec["SC12"])
+        masked[spec["SC12"] < get_coh_min()] = 0.0
+        # masked[spec["SC12"] >= get_coh_min()] = 1.0
+        time_freq_image(
+            masked,
+            "coherence (%s, %s) > %f" % (probe_name_1, probe_name_2, get_coh_min()),
+        )
+        plt.colorbar()
+        plt.show()
 
     # Create a modespec-like colored spectrogram plot - thresholded by args.coh_min
 
@@ -125,7 +133,7 @@ if __name__ == "__main__":
         matplotlib.colors.to_rgb(modespyec.get_color(n)) for n in np.arange(-5, 6, 1)
     ]
     modespyec_cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
-        "modespyec", modespyec_clist, N=100
+        "modespyec", modespyec_clist, N=args.color_steps
     )
     mpl.colormaps.register(modespyec_cmap)
     time_freq_image(
