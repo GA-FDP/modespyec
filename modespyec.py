@@ -107,13 +107,23 @@ def get_mode_map(
     no_value: float = np.nan,
     pfrac: float = None,
     qhigh: float = 0.99,
+    tmin: float = None,
+    tmax: float = None,
 ) -> np.array:
     nmap = -1 * (180 / np.pi) * np.angle(M["SX12"]) / delta_theta
     nmap[M["SC12"] < coh_min] = no_value
     if not pfrac is None:
         assert pfrac > 0.0 and pfrac <= 1.0
         P = (M["X11"] + M["X22"]) / 2
-        phigh = np.quantile(P, q=qhigh)
+        if tmin is None:
+            tmin = M["tmid"][0]
+        if tmax is None:
+            tmax = M["tmid"][-1]
+        quantile_time_window = np.logical_and(M["tmid"] >= tmin, M["tmid"] <= tmax)
+        assert (
+            np.sum(quantile_time_window) > 0
+        ), "empty time window for peak power reference value"
+        phigh = np.quantile(P[:, quantile_time_window], q=qhigh)
         pmin = pfrac * phigh
         nmap[P < pmin] = no_value
     return nmap
