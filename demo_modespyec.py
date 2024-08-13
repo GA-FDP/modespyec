@@ -1,5 +1,8 @@
 """
 Script that generates and plots a modespec-like plot for a given DIII-D shot number.
+
+EXAMPLE:
+  python demo_modespyec.py --shot 169856 --tmax 5.0 --coh-min -1 --pow-frac 0.33 --nfsmooth 5 --window boxcar --eps-int 0.50 --only-modespec-plot
 """
 
 import numpy as np
@@ -46,6 +49,9 @@ if __name__ == "__main__":
     parser.add_argument("--only-modespec-plot", action="store_true")
     parser.add_argument("--color-steps", type=int, default=100)
 
+    parser.add_argument("--integrated", action="store_true")
+    parser.add_argument("--eps-amp", type=float, default=0.0)
+
     args = parser.parse_args()
 
     probe_name_1, probe_name_2, delta_theta = get_default_probe(args.shot)
@@ -74,6 +80,7 @@ if __name__ == "__main__":
         args.nfft,
         args.window,
         args.nfsmooth,
+        args.eps_amp,
     )
 
     # Plotting example helpers
@@ -142,7 +149,7 @@ if __name__ == "__main__":
         modespyec.get_mode_map(
             spec,
             delta_theta,
-            get_coh_min(),
+            coh_min=get_coh_min(),
             no_value=0.0,
             pfrac=args.pow_frac,
             tmin=args.pow_tmin,
@@ -168,6 +175,8 @@ if __name__ == "__main__":
         spec,
         [5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5],
         delta_theta,
+        nsigned=True,
+        integrated=args.integrated,
         coh_min=get_coh_min(),
         eps_int=args.eps_int,
     )
@@ -179,7 +188,7 @@ if __name__ == "__main__":
     plt.grid(True)
     plt.gca().set_facecolor("black")
     plt.xlabel("time [sec]")
-    plt.ylabel("RMS amplitude [T/s]")
+    plt.ylabel("RMS amplitude [T]" if args.integrated else "RMS amplitude [T/s]")
     plt.title("shot #%i" % (args.shot))
     plt.show()
 
