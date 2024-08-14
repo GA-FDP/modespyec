@@ -2,7 +2,7 @@
 
 Vanilla `modespec`-like spectrogram capabilities. Requires only `numpy`. The demonstration script also requires `matplotlib` and `toksearch`.
 
-## Usage
+## Basic usage
 ```
 import modespyec
 ...
@@ -23,3 +23,15 @@ Another example:
 ```
 python demo_modespyec.py --shot 169856 --tmax 5.0 --coh-min -1 --pow-frac 0.33 --nfsmooth 5 --window boxcar --eps-int 0.50 --only-modespec-plot
 ```
+
+## Using entire midplane array to extract amplitude traces
+
+See demonstration script `demo_array_rms.py`. 
+
+Specific example call:
+```
+python demo_array_rms.py --shots 159299 162935 195068 193280
+```
+
+A pipeline is setup that fetches all the midplane fluctuation array probes. The pipeline applies pairwise analysis to consecutive probes along the midplane circle. It then combines all results to a RMS amplitude trace for a set of toroidal mode numbers $|n|=1,2,3$.
+ 
